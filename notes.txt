@@ -1,0 +1,83 @@
+To read some data on Chrome Dev console:
+
+function getFormattedDate(date) {
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  let hours = date.getHours();
+  const minutes = date.getMinutes();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12; // the hour '0' should be '12'
+  const strTime = (hours < 10 ? '0' + hours : hours) + ':' + (minutes < 10 ? '0' + minutes : minutes) + ' ' + ampm;
+
+  const day = date.getDate();
+  const monthIndex = date.getMonth();
+  const year = date.getFullYear();
+
+  return strTime + ' - ' + months[monthIndex] + ' ' + (day < 10 ? '0' + day : day) + ', ' + year;
+}
+
+const displaySeconds = (seconds) => {
+  const units = [
+    { name: "year", value: 365 * 24 * 60 * 60 },
+    { name: "month", value: 30 * 24 * 60 * 60 }, // Approximate average month
+    { name: "week", value: 7 * 24 * 60 * 60 },
+    { name: "day", value: 24 * 60 * 60 },
+    { name: "hour", value: 60 * 60, display: "hr" },
+    { name: "minute", value: 60, display: "min" },
+    { name: "second", value: 1, display: "s" },
+  ];
+
+  let result = "";
+  let unitsUsed = 0;
+
+  for (let i = 0; i < units.length; i++) {
+    const unitValue = units[i].value;
+    const count = Math.floor(seconds / unitValue);
+
+    if (count > 0) {
+      if (unitsUsed === 2) {
+        break
+      }
+
+      result += `${count}${units[i].display ?? units[i].name[0]} `
+      seconds -= count * unitValue;
+      unitsUsed++;
+    } else if (count === 0 && unitsUsed > 0) {
+      unitsUsed++
+    }
+  }
+
+  return result.trim();
+}
+
+chrome.storage.local.get("data").then(items => {
+    const data = JSON.parse(items["data"]);
+    const hostname = "";
+    const sessions = data[hostname].sessions;
+    const result = sessions.map((session) => {
+        const newStart = new Date(session.start);
+        const newEnd = new Date(session.end);
+        const duration = (newEnd.valueOf() - newStart.valueOf()) / 1000
+        return {
+            start: getFormattedDate(newStart),
+            end: getFormattedDate(newEnd),
+            duration: displaySeconds(duration),
+            url: session.url
+        }
+    })
+    console.log(result)
+})
+
+# General
+
+chrome.storage.local.get("data").then(items => {
+    const data = JSON.parse(items["data"]);
+    console.log(data)
+})
+
+# All
+
+chrome.storage.local.get(null).then(data => {
+    console.log(data)
+})
